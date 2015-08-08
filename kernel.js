@@ -16,7 +16,6 @@ export type Expression =
 ;
   // TODO: others
 
-// TODO: why is flow complaining about incompatibility between these types?
 export type Pattern =
     { pt: "final", name: string, guard: ?Expression } |
     { pt: "ignore", guard: ?Expression } |
@@ -27,6 +26,15 @@ export type Pattern =
 
 function fix<T>(x: T): T {
     return Object.freeze(x);
+}
+
+function trace<T>(label, x: T): T {
+    var tracing = false;
+
+    if (tracing) {
+	console.log(label, x);
+    }
+    return x;
 }
 
 export var nullExpr : Expression = fix({ is: "null" });
@@ -128,17 +136,17 @@ function loadString(s) {
     return decode_utf8(s.slice(size));
 };
 
-function loadTuple(s): Array<Expression> {
+function loadTuple<S, T>(s, f: ((s: S) => T)): Array<T> {
     var kind = s.nextByte();
     if (kind != 7) {
 	throw new Error("expected Tuple (7); got: " + kind);
     }
-    var arity = s.nextVarInt();
+    var arity = trace("tuple arity", s.nextVarInt());
     // TODO: MAX_ARITY
     // ew... why can't I get map or a comprehension to work?!
     var rv = [];
     for(var i = arity; i > 0; i--) {
-	rv.push(loadTerm(s));
+	rv.push(f(s));
     }
     return rv;
 };
@@ -148,15 +156,15 @@ function loadOpt(s): ?Expression {
     return e.is === 'null' ? null : e;
 }
 
+function badFormat(info) {
+    throw new Error("bad format " + JSON.stringify(info));
+};
+
 function loadTerm(stream): Expression {
     var kind = stream.nextByte();
 
     function notImpl(): Expression {
 	throw new Error("not impl " + kind);
-    };
-
-    function badFormat() {
-	throw new Error("bad format " + kind);
     };
 
     function loadStrVal(s): string {
@@ -167,7 +175,7 @@ function loadTerm(stream): Expression {
 	return e.val;
     }
 
-    var kinds = [
+    var kinds : Array<((s: any) => Expression)>= [
 	(s) => nullExpr,
 	(s) => trueExpr,
 	(s) => falseExpr,
@@ -175,39 +183,47 @@ function loadTerm(stream): Expression {
 	(s) => notImpl(), // double
 	(s) => notImpl(), // char
 	(s) => intExpr(zzd(s.nextVarInt())),
-	(s) => badFormat(), // we handle tuple elsewhere
-	(s) => badFormat(), // bag
-	(s) => badFormat(), // attr
+	(s) => badFormat({ exprKind: kind}), // we handle tuple elsewhere
+	(s) => badFormat({ exprKind: kind}), // bag
+	(s) => badFormat({ exprKind: kind}), // attr
 
-	(s) => loadTerm(s), // 10: LiteralExpr
+	// 10: LiteralExpr
+	(s) => loadTerm(s),
 	(s) => fix({is: 'noun', name: loadStrVal(s)}),
 	(s) => notImpl(), // @@binding
-	(s) => fix({is: 'seq', items: loadTuple(s)}),
+	(s) => fix({is: 'seq', items: loadTuple(s, loadTerm)}),
 	(s) => fix({is: 'call',
 		    target: loadTerm(s),
 		    verb: loadStrVal(s),
-		    args: loadTuple(s)}),
+		    args: loadTuple(s, loadTerm)}),
+	// 16: Def
 	(s) => fix({is: 'def', pat: loadPattern(s),
-		    guard: loadOpt(s), expr: loadTerm(s)})
+		    guard: loadOpt(s), expr: loadTerm(s)}),
     ];
 
     var loadKind = kinds[kind];
-    if (loadKind) {
-	var e = loadKind(stream);
-	return e;
-    } else {
-	return notImpl();
+    if (!loadKind) {
+	notImpl();
     }
+
+    return trace("loadTerm", loadKind(stream));
 }
 
 
-function loadPattern(stream): Pattern {
-    var bias = 27;
-    var kind = stream.nextByte() - bias;
+function loadOptPattern(stream): ?Pattern {
+    var peek = stream.nextByte();
+    if (peek == 0) {
+	return null;
+    }
+    return loadPattern(stream, peek);
+}
 
-    function notImpl(): Expression {
-	throw new Error("not impl " + kind);
-    };
+function loadPattern(stream, peek: ?number): Pattern {
+    var bias = 27;
+    if (!peek) {
+	peek = stream.nextByte();
+    }
+    var kind = peek - bias;
 
     function loadNounName(s): string {
 	var e = loadTerm(s);
@@ -217,16 +233,20 @@ function loadPattern(stream): Pattern {
 	return e.name;
     }
 
-    var kinds = [
-	(s) => fix({pt: 'final', name: loadNounName(s), guard: loadOpt(s)}),
-	(s) => fix({pt: 'ignore', guard: loadOpt(s)})
+    var kinds: Array<((s: any) => Pattern)> = [
+	(s) => fix({pt: 'final', name: loadNounName(s),
+		    guard: loadOpt(s)}),
+	(s) => fix({pt: 'ignore', guard: loadOpt(s)}),
+	(s) => fix({pt: 'var', name: loadNounName(s),
+		    guard: loadOpt(s)}),
+	(s) => fix({pt: 'list', items: loadTuple(s, loadPattern),
+		    tail: loadOptPattern(s)}),
+	(s) => fix({pt: "via", view: loadTerm(s), inner: loadPattern(s) })
     ];
 
     var loadKind = kinds[kind];
-    if (loadKind) {
-	var rv = loadKind(stream);
-	return rv;
-    } else {
-	return notImpl();
+    if (!loadKind) {
+	throw badFormat({patternKind: kind, slice: stream.slice(4)});
     }
+    return trace("loadPattern", loadKind(stream));
 }

@@ -24,6 +24,8 @@ print(1 + 1);
 // => 2
 </pre>
 
+<h2>Simple Literal Expression</h2>
+
 <p>Bytes are represented with a bias of 32 (presumably so that they're
 printable). So '*' is 10, i.e. LiteralExpr. and '&' is 6, i.e. int.
 Integers are variable length. 't' is 42 (LSB is the sign bit).</p>
@@ -36,6 +38,10 @@ var actual = System.import('kernel').then(function(k) {
 printResolved(actual);
 // => [{is: "int", val: 42}]
 </pre>
+
+<h2>Hello World Program</h2>
+
+<p>Let's try <code>{def x := 42; traceln(x)}</code></p>
 
 <pre class="test">
 var actual = System.import('kernel').then(function(k) {
@@ -61,6 +67,79 @@ printResolved(actual);
         verb: "run"
       }
     ]
+  }
+]
+*/
+</pre>
+
+
+<h3>Complex Pattern</h3>
+
+<p>
+  let's deserialize
+  <code>def [x, var y, [=>choc, =>van], bind z] := bzzt</code>:
+</p>
+
+<pre class="test">
+var actual = System.import('kernel').then(function(k) {
+  return k.load("/>'$;+#!x =+#!y ?.+#+_mapExtract##run'!*#$choc>'\";+#$choc ?.+#+_mapExtract##run'!*##van>'\";+##van <+#)_mapEmpty  ?.+#%_bind##run'\"+#*z_Resolver+#$null;+#!z   +#$bzzt");
+});
+
+printResolved(actual);
+/* =>
+[
+  {
+    expr: {is: "noun", name: "bzzt"},
+    guard: null,
+    is: "def",
+    pat: {
+      items: [
+        {guard: null, name: "x", pt: "final"},
+        {guard: null, name: "y", pt: "var"},
+        {
+          inner: {
+            items: [
+              {guard: null, name: "choc", pt: "final"},
+              {
+                inner: {
+                  items: [{guard: null, name: "van", pt: "final"}, {guard: {is: "noun", name: "_mapEmpty"}, pt: "ignore"}],
+                  pt: "list",
+                  tail: null
+                },
+                pt: "via",
+                view: {
+                  args: [{is: "str", val: "van"}],
+                  is: "call",
+                  target: {is: "noun", name: "_mapExtract"},
+                  verb: "run"
+                }
+              }
+            ],
+            pt: "list",
+            tail: null
+          },
+          pt: "via",
+          view: {
+            args: [{is: "str", val: "choc"}],
+            is: "call",
+            target: {is: "noun", name: "_mapExtract"},
+            verb: "run"
+          }
+        },
+        {
+          inner: {guard: null, name: "z", pt: "final"},
+          pt: "via",
+          view: {
+            args: [{is: "noun", name: "z_Resolver"}, {is: "noun", name: "null"}],
+            is: "call",
+            target: {is: "noun", name: "_bind"},
+            verb: "run"
+          }
+        }
+      ],
+      pt: "list",
+      tail: null
+    }
   }
 ]
 */
