@@ -24,6 +24,10 @@ print(1 + 1);
 // => 2
 </pre>
 
+<p>Bytes are represented with a bias of 32 (presumably so that they're
+printable). So '*' is 10, i.e. LiteralExpr. and '&' is 6, i.e. int.
+Integers are variable length. 't' is 42 (LSB is the sign bit).</p>
+
 <pre class="test">
 var actual = System.import('kernel').then(function(k) {
   return k.load("*&t");
@@ -31,6 +35,35 @@ var actual = System.import('kernel').then(function(k) {
 
 printResolved(actual);
 // => [{is: "int", val: 42}]
+</pre>
+
+<pre class="test">
+var actual = System.import('kernel').then(function(k) {
+  return k.load("-'\"/;+#!x  *&t.+#'traceln##run'!+#!x");
+});
+
+printResolved(actual);
+/* =>
+[
+  {
+    is: "seq",
+    items: [
+      {
+        expr: {is: "int", val: 42},
+        guard: null,
+        is: "def",
+        pat: {guard: null, name: "x", pt: "final"}
+      },
+      {
+        args: [{is: "noun", name: "x"}],
+        is: "call",
+        target: {is: "noun", name: "traceln"},
+        verb: "run"
+      }
+    ]
+  }
+]
+*/
 </pre>
 
 </body>
