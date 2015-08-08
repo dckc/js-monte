@@ -13,7 +13,7 @@ type Expression =
   { is: "noun", has: string };
   // TODO: others
 
-function load(data: string): Expression {
+export function load(data: string): Expression {
   return { is: "null" };
 }
 
