@@ -9,6 +9,8 @@
 <body>
   <h1>Monte / JavaScript</h1>
 
+  <p>See <a href="kernel_test.html">kernel testing</a>.</p>
+
   <hr />
   <address>
     Copyright (c) 2015 <a href="http://www.madmode.com/">Dan Connolly</a><br />
@@ -19,8 +21,8 @@
   <script type="text/javascript" src="jspm_packages/system.js"></script>
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript">
-  System.import('main').then(function(main) {
-    console.log(main);
+  System.import('kernel').then(function(kernel) {
+    console.log(kernel);
   });
 
   </script>

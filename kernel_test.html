@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>DFBuilder Test Notes</title>
+  <title>Kernel Monte Test Notes</title>
   <meta charset="utf-8" />
-  <script src="kernel.js"></script>
 
+  <script type="text/javascript" src="jspm_packages/system.js"></script>
+  <script type="text/javascript" src="config.js"></script>
   <script src="doctest/doctestjs-master/doctest.js"></script>
   <link href="doctest/doctestjs-master/doctest.css" rel="stylesheet" />
 </head>
@@ -21,6 +22,15 @@ in <code>doctestjs-master/</code>.</p>
 <pre class="test">
 print(1 + 1);
 // => 2
+</pre>
+
+<pre class="test">
+var actual = System.import('kernel').then(function(k) {
+  return k.load("*&t");
+});
+
+printResolved(actual);
+// => { is: "int", has: 42 }
 </pre>
 
 </body>
