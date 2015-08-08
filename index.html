@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+
+<head>
+  <title>js-monte</title>
+  <meta charset="utf-8"/>
+</head>
+
+<body>
+  <h1>Monte / JavaScript</h1>
+
+  <hr />
+  <address>
+    Copyright (c) 2015 <a href="http://www.madmode.com/">Dan Connolly</a><br />
+    Share and enjoy under the terms of
+    MIT Open Source License.
+  </address>
+
+  <script type="text/javascript" src="jspm_packages/system.js"></script>
+  <script type="text/javascript" src="config.js"></script>
+  <script type="text/javascript">
+  System.import('main').then(function(main) {
+    console.log(main);
+  });
+
+  </script>
+</body>
+
+</html>
