@@ -9,7 +9,21 @@
 <body>
   <h1>Monte / JavaScript</h1>
 
-  <p>See <a href="kernel_test.html">kernel testing</a>.</p>
+  <textarea id='AST' rows='20' cols='50'></textarea>
+  <br />
+  <button id='go'>Deserialize</button>
+
+  <pre id="output">
+[
+    1,
+    2,
+    3
+]
+  </pre>
+  <pre id="error" style="color: red">
+    ...
+  </pre>
+  <p>See also: <a href="kernel_test.html">kernel testing</a>.</p>
 
   <hr />
   <address>
@@ -22,7 +36,24 @@
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript">
   System.import('kernel').then(function(kernel) {
-    console.log(kernel);
+    function gebi(i) { return document.getElementById(i); };
+    function go() {
+       var ast;
+
+       gebi('output').textContent = "";
+       gebi('error').textContent = "";
+
+       try {
+         ast = kernel.load(gebi('AST').value);
+         gebi('output').textContent = JSON.stringify(ast, '    ');
+       } catch(e) {
+         console.log(e);
+         gebi('error').textContent = e.message;
+  
+       }
+    }
+
+    gebi('go').addEventListener('click', go);
   });
 
   </script>
