@@ -45,11 +45,11 @@ printResolved(actual_lit);
 <p>Let's try <code>{def x := 42; traceln(x)}</code></p>
 
 <pre class="test">
-var actual = fmt.then(function(k) {
+var actual_tracex = fmt.then(function(k) {
   return k.load("-'\"/;+#!x  *&t.+#'traceln##run'!+#!x");
 });
 
-printResolved(actual);
+printResolved(actual_tracex);
 /* =>
 [
   {
@@ -149,31 +149,62 @@ printResolved(actual);
 <div><h2>Conversion to JavaScript</h2>
 
 <pre class="test">
-function gen(treeP) {
-  var egP = System.import('escodegen');
-  return egP.then(function(escodegen) {
-    return treeP.then(function(estree) {
-      return escodegen.generate(estree);
+var jstargetP = System.import('jstarget');
+var egP = System.import('escodegen');
+
+function both(p1, p2, f) {
+  return p1.then(function(v1) {
+    return p2.then(function(v2) {
+      return f(v1, v2);
     });
   });
 }
 
-
-var jstargetP = System.import('jstarget');
-
-var estreeP = jstargetP.then(function(jstarget) {
-  return actual_lit.then(function(exprs) {
-    var expr = exprs[0];
-    print(expr);
-    return jstarget.toESTree(expr);
+function ast2estree(astsP) {
+  return both(jstargetP, astsP, function(jstarget, asts) {
+    var ast = asts[0];
+    print(ast);
+    return jstarget.toESTree(ast);
   });
-});
+}
 
-printResolved(gen(estreeP));
+function gen(treeP) {
+  return both(egP, treeP, function(escodegen, estree) {
+    return escodegen.generate(estree);
+  });
+}
+
+printResolved(gen(ast2estree(actual_lit)));
 /* =>
 {is: "int", val: 42}
 __monte_runtime.wrapInt(42)
 */
+</pre>
+
+<pre class="test">
+printResolved(gen(ast2estree(actual_tracex)));
+
+/* =>
+{
+  is: "seq",
+  items: [
+    {
+      expr: {is: "int", val: 42},
+      guard: null,
+      is: "def",
+      pat: {guard: null, name: "x", pt: "final"}
+    },
+    {
+      args: [{is: "noun", name: "x"}],
+      is: "call",
+      target: {is: "noun", name: "traceln"},
+      verb: "run"
+    }
+  ]
+}
+x = __monte_runtime.wrapInt(42), traceln.run(x)
+*/
+
 </pre>
 
 </div>
