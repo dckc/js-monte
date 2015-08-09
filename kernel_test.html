@@ -31,7 +31,7 @@ printable). So '*' is 10, i.e. LiteralExpr. and '&' is 6, i.e. int.
 Integers are variable length. 't' is 42 (LSB is the sign bit).</p>
 
 <pre class="test">
-var actual = System.import('kernel').then(function(k) {
+var actual = System.import('ast_fmt1').then(function(k) {
   return k.load("*&t");
 });
 
@@ -44,7 +44,7 @@ printResolved(actual);
 <p>Let's try <code>{def x := 42; traceln(x)}</code></p>
 
 <pre class="test">
-var actual = System.import('kernel').then(function(k) {
+var actual = System.import('ast_fmt1').then(function(k) {
   return k.load("-'\"/;+#!x  *&t.+#'traceln##run'!+#!x");
 });
 
@@ -81,7 +81,7 @@ printResolved(actual);
 </p>
 
 <pre class="test">
-var actual = System.import('kernel').then(function(k) {
+var actual = System.import('ast_fmt1').then(function(k) {
   return k.load("/>'$;+#!x =+#!y ?.+#+_mapExtract##run'!*#$choc>'\";+#$choc ?.+#+_mapExtract##run'!*##van>'\";+##van <+#)_mapEmpty  ?.+#%_bind##run'\"+#*z_Resolver+#$null;+#!z   +#$bzzt");
 });
 

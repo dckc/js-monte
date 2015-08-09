@@ -35,7 +35,7 @@
   <script type="text/javascript" src="jspm_packages/system.js"></script>
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript">
-  System.import('kernel').then(function(kernel) {
+  System.import('ast_fmt1').then(function(fmt) {
     function gebi(i) { return document.getElementById(i); };
     function go() {
        var ast;
@@ -44,7 +44,7 @@
        gebi('error').textContent = "";
 
        try {
-         ast = kernel.load(gebi('AST').value);
+         ast = fmt.load(gebi('AST').value);
          gebi('output').textContent = JSON.stringify(ast, '    ');
        } catch(e) {
          console.log(e);
