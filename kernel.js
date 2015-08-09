@@ -11,15 +11,21 @@ export type Expression =
     { is: "int", val: number }  | // TODO: arbitrary precision int
     { is: "seq", items: Array<Expression> } |
     { is: "noun", name: string } |
+    { is: "binding", name: string } |
     { is: "def", pat: Pattern, guard: ?Expression, expr: Expression } |
     { is: "call", target: Expression, verb: string, args: Array<Expression> } |
     { is: "escape", pattern: Pattern, body: Expression,
       catchPattern: ?Pattern, catchBody: Expression } |
     { is: "finally", body: Expression, finalBody: Expression } |
+    { is: "try", body: Expression,
+      exc: Pattern, handler: Expression } |
     { is: "object", doc: ?string, name: ?string,
-      as: ?Expression, impl: Array<Expression>, script: Script }
+      as: ?Expression, impl: Array<Expression>, script: Script } |
+    { is: "assign", target: string, rvalue: Expression } |
+    { is: "hide", inner: Expression } |
+    { is: "if", test: Expression, then: Expression, otherwise: Expression } |
+    { is: "meta" } // natures other than context?
 ;
-  // TODO: others
 
 type Script = { ext: ?Expression,
 		methods: Array<Method>,
@@ -199,7 +205,7 @@ function decode_utf8(s) {
   return decodeURIComponent(escape(s));
 }
 
-function loadString(s) {
+function loadString(s): string {
     var size = s.nextVarInt(); //toInt
     return decode_utf8(size > 0 ? s.slice(size) : "");
 };
@@ -234,10 +240,6 @@ function loadTerm(stream, peek: ?number): Expression {
 	peek = getTag(stream);
     }
     var kind = trace('loadTerm kind: ' + tagName[peek], peek);
-
-    function notImpl(): Expression {
-	throw new Error("not impl " + kind);
-    };
 
     function loadStrVal(s, peek: ?number): string {
 	var e = loadTerm(s, peek);
@@ -287,8 +289,19 @@ function loadTerm(stream, peek: ?number): Expression {
     }
 
     function loadMatcher(s): Matcher {
+	getTag(s, 'Matcher');
+
 	return { pattern: loadPattern(s),
 		 body: loadTerm(s) };
+    }
+
+    function loadMeta(s): Expression {
+	var nature = loadStrVal(s);
+	if (nature != "context") {
+	    throw new Error({expected: "meta.context()",
+			     actual: nature});
+	}
+	return fix({ is: "meta" });
     }
 
     var kinds : Array<((s: any) => Expression)>= [
@@ -296,8 +309,8 @@ function loadTerm(stream, peek: ?number): Expression {
 	(s) => trueExpr,
 	(s) => falseExpr,
 	(s) => strExpr(loadString(s)),
-	(s) => notImpl(), // double
-	(s) => notImpl(), // char
+	(s) => fix({ is: 'double', val: s.slice(8)}), // TODO: decode float
+	(s) => fix({ is: 'char', val: loadString(s)}),
 	(s) => intExpr(zzd(s.nextVarInt())),
 	(s) => badFormat({ actual: tagName[kind]}), // we handle tuple elsewhere
 	(s) => badFormat({ actual: tagName[kind]}), // bag
@@ -306,7 +319,7 @@ function loadTerm(stream, peek: ?number): Expression {
 	// 10: LiteralExpr
 	(s) => loadTerm(s),
 	(s) => fix({is: 'noun', name: loadStrVal(s)}),
-	(s) => notImpl(), // @@binding
+	(s) => fix({is: 'binding', name: loadNounName(s)}),
 	(s) => fix({is: 'seq', items: loadTuple(s, loadTerm)}),
 	(s) => fix({is: 'call',
 		    target: loadTerm(s),
@@ -326,22 +339,25 @@ function loadTerm(stream, peek: ?number): Expression {
 	(s) => badFormat({ actual: tagName[kind]}), // 19: 'Method',
 
 	(s) => badFormat({ actual: tagName[kind]}), // 20: 'Matcher',
-	(s) => notImpl(), // 21: 'Assign',
+	(s) => fix({ is: "assign",
+		     target: loadNounName(s),
+		     rvalue: loadTerm(s) }),
 	(s) => fix({ is: "finally", body: loadTerm(s),
 		     finalBody: loadTerm(s)}),  
-	(s) => notImpl(), // 23: 'KernelTry',
-	(s) => notImpl(), // 24: 'HideExpr',
+	(s) => fix({ is: "try", body: loadTerm(s),
+		    exc: loadPattern(s),
+		    handler: loadTerm(s)}),
+	(s) => fix({ is: "hide", inner: loadTerm(s) }),
 
-	(s) => notImpl(), // 25: 'If',
-	(s) => notImpl(), // 26: 'Meta',
-
-	// ...
-	// 33: 'Character',
+	(s) => fix({ is: "if", test: loadTerm(s), then: loadTerm(s),
+		     otherwise: loadTerm(s) }),
+	(s) => loadMeta(s)
     ];
 
     var loadKind = kinds[kind];
     if (!loadKind) {
-	notImpl();
+	throw new Error({expected: "expression tag",
+			 actual: [kind, tagName[kind]]});
     }
 
     return trace("loadTerm", loadKind(stream));
@@ -377,7 +393,8 @@ function loadPattern(stream, peek: ?number): Pattern {
 
     var loadKind = kinds[kind];
     if (!loadKind) {
-	throw badFormat({patternKind: kind, slice: stream.slice(4)});
+	throw badFormat({patternKind: [peek, kind, tagName[peek]],
+			 slice: stream.slice(4)});
     }
     return trace("loadPattern", loadKind(stream));
 }
