@@ -32,11 +32,11 @@ Integers are variable length. 't' is 42 (LSB is the sign bit).</p>
 
 <pre class="test">
 var fmt = System.import('ast_fmt1');
-var actual = fmt.then(function(k) {
+var actual_lit = fmt.then(function(k) {
   return k.load("*&t");
 });
 
-printResolved(actual);
+printResolved(actual_lit);
 // => [{is: "int", val: 42}]
 </pre>
 
@@ -145,6 +145,38 @@ printResolved(actual);
 ]
 */
 </pre>
+
+<div><h2>Conversion to JavaScript</h2>
+
+<pre class="test">
+function gen(treeP) {
+  var egP = System.import('escodegen');
+  return egP.then(function(escodegen) {
+    return treeP.then(function(estree) {
+      return escodegen.generate(estree);
+    });
+  });
+}
+
+
+var jstargetP = System.import('jstarget');
+
+var estreeP = jstargetP.then(function(jstarget) {
+  return actual_lit.then(function(exprs) {
+    var expr = exprs[0];
+    print(expr);
+    return jstarget.toESTree(expr);
+  });
+});
+
+printResolved(gen(estreeP));
+/* =>
+{is: "int", val: 42}
+__monte_runtime.wrapInt(42)
+*/
+</pre>
+
+</div>
 
 </body>
 </html>
