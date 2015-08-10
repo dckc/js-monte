@@ -14,11 +14,11 @@
   <button id='go'>Deserialize</button>
 
   <pre id="output">
-[
-    1,
-    2,
-    3
-]
+...
+  </pre>
+  <pre id="estree">
+  </pre>
+  <pre id="jsout">
   </pre>
   <pre id="error" style="color: red">
     ...
@@ -36,16 +36,23 @@
   <script type="text/javascript" src="config.js"></script>
   <script type="text/javascript">
   System.import('ast_fmt1').then(function(fmt) {
+  System.import('jstarget').then(function(jstarget) {
+  System.import('escodegen').then(function(escodegen) {
     function gebi(i) { return document.getElementById(i); };
     function go() {
-       var ast;
+       var ast, estree;
 
        gebi('output').textContent = "";
        gebi('error').textContent = "";
+       gebi('estree').textContent = "";
+       gebi('jsout').textContent = "";
 
        try {
-         ast = fmt.load(gebi('AST').value);
+         ast = fmt.load(gebi('AST').value)[0];
          gebi('output').textContent = JSON.stringify(ast, '    ');
+         estree = jstarget.toESTree(ast);
+         gebi('estree').textContent = JSON.stringify(estree);
+         gebi('jsout').textContent = escodegen.generate(estree);
        } catch(e) {
          console.log(e);
          gebi('error').textContent = e.message;
@@ -54,7 +61,7 @@
     }
 
     gebi('go').addEventListener('click', go);
-  });
+  })})});
 
   </script>
 </body>
