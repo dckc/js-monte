@@ -1,30 +1,31 @@
 /* @flow */
 
 export type Expression =
-    { is: "null" } |
-    { is: "true" } |
-    { is: "false" } |
-    { is: "str", val: string } |
-    { is: "double", val: number } |
-    { is: "char", val: string } |  // no char type in JS :-/
-    { is: "int", val: number }  | // TODO: arbitrary precision int
+    { form: "null" } |
+    { form: "true" } |
+    { form: "false" } |
+    { form: "str", val: string } |
+    { form: "double", val: number } |
+    { form: "char", val: string } |  // no char type in JS :-/
+    { form: "int", val: number }  | // TODO: arbitrary precision int
 
-    { is: "noun", name: string } |
-    { is: "binding", name: string } |
-    { is: "seq", items: Array<Expression> } |
-    { is: "call", target: Expression, verb: string, args: Array<Expression> } |
-    { is: "def", pat: Pattern, guard: ?Expression, expr: Expression } |
-    { is: "escape", ejector: Pattern, escBody: Expression,
+    { form: "noun", name: string } |
+    { form: "binding", name: string } |
+    { form: "seq", items: Array<Expression> } |
+    { form: "call", target: Expression,
+      verb: string, args: Array<Expression> } |
+    { form: "def", pat: Pattern, guard: ?Expression, expr: Expression } |
+    { form: "escape", ejector: Pattern, escBody: Expression,
       exc: ?Pattern, handler: Expression } |
-    { is: "object", doc: ?string, name: ?string,
+    { form: "object", doc: ?string, name: ?string,
       as: ?Expression, impl: Array<Expression>, script: Script } |
-    { is: "assign", target: string, rvalue: Expression } |
-    { is: "finally", finalBody: Expression, finish: Expression } |
-    { is: "try", tryBody: Expression,
+    { form: "assign", target: string, rvalue: Expression } |
+    { form: "finally", finalBody: Expression, finish: Expression } |
+    { form: "try", tryBody: Expression,
       exc: Pattern, handler: Expression } |
-    { is: "hide", inner: Expression } |
-    { is: "if", test: Expression, then: Expression, otherwise: Expression } |
-    { is: "meta" } // natures other than context?
+    { form: "hide", inner: Expression } |
+    { form: "if", test: Expression, then: Expression, otherwise: Expression } |
+    { form: "meta" } // natures other than context?
 ;
 
 export type Script = { ext: ?Expression,
@@ -50,9 +51,9 @@ function fix<T>(x: T): T {
     return Object.freeze(x);
 }
 
-var aNullExpr : Expression = fix({ is: "null" });
-var trueExpr : Expression = fix({ is: "true" });
-var falseExpr : Expression = fix({ is: "false" });
+var aNullExpr : Expression = fix({ form: "null" });
+var trueExpr : Expression = fix({ form: "true" });
+var falseExpr : Expression = fix({ form: "false" });
 
 export function nullExpr() : Expression {
     return aNullExpr;
@@ -63,9 +64,9 @@ export function boolExpr(b: bool) : Expression {
 }
 
 export function strExpr(s: string): Expression {
-	return fix({ is: "str", val: s});
+	return fix({ form: "str", val: s});
 }
 
 export function intExpr(i: number): Expression {
-    return fix({ is: "int", val: i });
+    return fix({ form: "int", val: i });
 }

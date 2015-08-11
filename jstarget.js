@@ -38,7 +38,7 @@ type ESPattern =
 // TODO: return names bound (whether final or va) in expr too.
 export function toESTree(expr: Expression): ESExpr {
     trace('toESTree', expr);
-    trace('toESTree', expr.is);
+    trace('toESTree', expr.form);
 
     function dot(obj: ESExpr, propName: string): ESExpr {
 	return {type: 'MemberExpression',
@@ -54,20 +54,20 @@ export function toESTree(expr: Expression): ESExpr {
 		arguments: [{type: 'Literal', value: val}]};
     }
 
-    if (expr.is === 'true') {
+    if (expr.form === 'true') {
 	return lit(true, 'wrapBool');
-    } else if (expr.is === 'false') {
+    } else if (expr.form === 'false') {
 	return lit(false, 'wrapBool');
-    } else if (expr.is === 'int') {
+    } else if (expr.form === 'int') {
 	return lit(expr.val, 'wrapInt');
-    } else if (expr.is === 'str') {
+    } else if (expr.form === 'str') {
 	return lit(expr.val, 'wrapStr');
-    } else if (expr.is === 'seq') {
+    } else if (expr.form === 'seq') {
 	return {type: 'SequenceExpression',
 		expressions: expr.items.map(toESTree)};
-    } else if (expr.is === 'noun') {
+    } else if (expr.form === 'noun') {
 	return {type: 'Identifier', name: expr.name};
-    } else if (expr.is === 'def') {
+    } else if (expr.form === 'def') {
 	var pat = expr.pat;
 	if (pat.pt === 'final') {
 	    // TODO: pattern guard
@@ -78,22 +78,22 @@ export function toESTree(expr: Expression): ESExpr {
 		    right: toESTree(expr.expr) };
 	}
 	throw new Error('pattern not impl: ' + pat.pt);
-    } else if (expr.is === 'call') {
+    } else if (expr.form === 'call') {
 	var args: Array<Expression> = expr.args;
 	return { type: 'CallExpression',
 		 // TODO: computed member expr for non-identifier verbs
 		 callee: dot(toESTree(expr.target), expr.verb),
 		 arguments: args.map(toESTree) };
-    } else if (expr.is === 'object') {
+    } else if (expr.form === 'object') {
 	return convertObject(expr.doc, expr.name,
 			     expr.as, expr.impl, expr.script);
-    } else if (expr.is === 'escape') {
+    } else if (expr.form === 'escape') {
 	limitation('escape: no escape exception', expr.exc === null);
 	limitation('escape: final ejector', expr.ejector.pt === 'final');
 	// TODO: real escape support
 	return toESTree(expr.escBody);
     } else {
-	throw new Error('not implemented: ' + expr.is);
+	throw new Error('not implemented: ' + expr.form);
     }
 }
 

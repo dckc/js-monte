@@ -86,8 +86,8 @@ function loadExpr(stream, peek: ?number): Expression {
 	(s) => boolExpr(true),
 	(s) => boolExpr(false),
 	(s) => strExpr(loadString(s)),
-	(s) => fix({ is: 'double', val: s.slice(8)}), // TODO: decode float
-	(s) => fix({ is: 'char', val: loadString(s)}),
+	(s) => fix({ form: 'double', val: s.slice(8)}), // TODO: decode float
+	(s) => fix({ form: 'char', val: loadString(s)}),
 	(s) => intExpr(zzd(s.nextVarInt())),
 	(s) => badFormat({ actual: tagName[kind]}), // we handle tuple elsewhere
 	(s) => badFormat({ actual: tagName[kind]}), // bag
@@ -95,18 +95,18 @@ function loadExpr(stream, peek: ?number): Expression {
 
 	// 10: LiteralExpr
 	(s) => loadExpr(s),
-	(s) => fix({is: 'noun', name: loadStrVal(s)}),
-	(s) => fix({is: 'binding', name: loadNounName(s)}),
-	(s) => fix({is: 'seq', items: loadTuple(s, loadExpr)}),
-	(s) => fix({is: 'call',
+	(s) => fix({form: 'noun', name: loadStrVal(s)}),
+	(s) => fix({form: 'binding', name: loadNounName(s)}),
+	(s) => fix({form: 'seq', items: loadTuple(s, loadExpr)}),
+	(s) => fix({form: 'call',
 		    target: loadExpr(s),
 		    verb: loadStrVal(s),
 		    args: loadTuple(s, loadExpr)}),
 
 	// 15: Def
-	(s) => fix({is: 'def', pat: loadPattern(s),
+	(s) => fix({form: 'def', pat: loadPattern(s),
 		    guard: loadOpt(s, loadExpr), expr: loadExpr(s)}),
-	(s) => fix({is: 'escape',
+	(s) => fix({form: 'escape',
 		    ejector: loadPattern(s),
 		    escBody: loadExpr(s),
 		    exc: loadOpt(s, loadPattern),
@@ -116,17 +116,17 @@ function loadExpr(stream, peek: ?number): Expression {
 	(s) => badFormat({ actual: tagName[kind]}), // 19: 'Method',
 
 	(s) => badFormat({ actual: tagName[kind]}), // 20: 'Matcher',
-	(s) => fix({ is: "assign",
+	(s) => fix({ form: "assign",
 		     target: loadNounName(s),
 		     rvalue: loadExpr(s) }),
-	(s) => fix({ is: "finally", finalBody: loadExpr(s),
+	(s) => fix({ form: "finally", finalBody: loadExpr(s),
 		     finish: loadExpr(s)}),  
-	(s) => fix({ is: "try", tryBody: loadExpr(s),
+	(s) => fix({ form: "try", tryBody: loadExpr(s),
 		    exc: loadPattern(s),
 		    handler: loadExpr(s)}),
-	(s) => fix({ is: "hide", inner: loadExpr(s) }),
+	(s) => fix({ form: "hide", inner: loadExpr(s) }),
 
-	(s) => fix({ is: "if", test: loadExpr(s), then: loadExpr(s),
+	(s) => fix({ form: "if", test: loadExpr(s), then: loadExpr(s),
 		     otherwise: loadExpr(s) }),
 	(s) => loadMeta(s)
     ];
@@ -149,7 +149,7 @@ function loadObject(s): Expression {
 
 	return {
 	    doc: (!docExpr ? null :
-		  docExpr.is === 'str' ? docExpr.val :
+		  docExpr.form === 'str' ? docExpr.val :
 		  badFormat({expected: 'Doc string', actual: docExpr})),
 	    verb: loadStrVal(s),
 	    params: loadTuple(s, loadPattern),
@@ -172,12 +172,12 @@ function loadObject(s): Expression {
 		badFormat({expected: "final or ignore pattern",
 			   actual: namePat}));
     var auditors = loadTuple(s, loadExpr);
-    var as = auditors[0].is === 'null' ? null : auditors[0];
+    var as = auditors[0].form === 'null' ? null : auditors[0];
     var impl = auditors.slice(1);
     
     getTag(s, 'Script');
     
-    return fix({is: 'object',
+    return fix({form: 'object',
 		doc: doc,
 		name: name,
 		as: as,
@@ -193,7 +193,7 @@ function loadMeta(s): Expression {
 	throw new Error({expected: "meta.context()",
 			 actual: nature});
     }
-    return fix({ is: "meta" });
+    return fix({ form: "meta" });
 }
 
 
@@ -247,7 +247,7 @@ function loadPattern(stream, peek: ?number): Pattern {
 
 function loadStrVal(s, peek: ?number): string {
     var e = loadExpr(s, peek);
-    if (e.is !== 'str') {
+    if (e.form !== 'str') {
 	throw new Error({expected: 'str', actual: JSON.stringify(e)});
     }
     return e.val;
@@ -256,7 +256,7 @@ function loadStrVal(s, peek: ?number): string {
 
 function loadNounName(s): string {
     var e = loadExpr(s);
-    if (e.is !== 'noun') {
+    if (e.form !== 'noun') {
 	throw new Error({expected: 'noun', actual: e});
     }
     return e.name;
