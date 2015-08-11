@@ -1,46 +1,15 @@
 /* @flow
 */
 
-import {Expression, Pattern, Script, Method, Matcher,
-        nullExpr, boolExpr, intExpr, strExpr} from "./kernel";
-
-type ESExpr =
-    { type: "ObjectExpression",
-      properties: Array<Property> } |
-    { type: "FunctionExpression",
-      id: ?ESPattern,
-      params: Array<ESPattern>, defaults: Array<ESExpr>,
-      body: Statement,
-      generator: boolean, "expression": boolean } |
-    { type: 'Literal', value: ?(boolean | number | string) } |
-    { type: 'Identifier', name: string } |
-    { type: 'SequenceExpression',
-      expressions: Array<ESExpr> } |
-    { type: 'AssignmentExpression',
-      operator: string, /* TODO: AssignmentOperator */
-      left: /* TODO: Pattern | */ ESExpr,
-      right: ESExpr } |
-    { type: 'CallExpression', callee: ESExpr, arguments: Array<ESExpr> } |
-    { type: 'MemberExpression', object: ESExpr, property: ESExpr };
-
-type Property = { "type": "Property",
-                  "key": ESExpr,
-                  "computed": boolean,
-                  "value": ESExpr };
-
-type Statement =
-    { type: "BlockStatement", body: Array<Statement> } |
-    { type: "ReturnStatement", argument: ?ESExpr };
-
-type ESPattern =
-    { type: "Identifier", name: string };
+import * as mt from "./kernel";
+import * as es from "./estree";
 
 // TODO: return names bound (whether final or va) in expr too.
-export function toESTree(expr: Expression): ESExpr {
+export function toESTree(expr: mt.Expression): es.Expression {
     trace('toESTree', expr);
     trace('toESTree', expr.form);
 
-    function dot(obj: ESExpr, propName: string): ESExpr {
+    function dot(obj: es.Expression, propName: string): es.Expression {
 	return {type: 'MemberExpression',
 		object: obj,
 		property: {type: 'Identifier', name: propName}};
@@ -48,7 +17,7 @@ export function toESTree(expr: Expression): ESExpr {
 
     var rt = {type: 'Identifier', name: '__monte_runtime'};
 
-    function lit(val: bool | number | string, wrapper: string): ESExpr {
+    function lit(val: bool | number | string, wrapper: string): es.Expression {
 	return {type: 'CallExpression',
 		callee: dot(rt, wrapper),
 		arguments: [{type: 'Literal', value: val}]};
@@ -79,7 +48,7 @@ export function toESTree(expr: Expression): ESExpr {
 	}
 	throw new Error('pattern not impl: ' + pat.type);
     } else if (expr.form === 'call') {
-	var args: Array<Expression> = expr.args;
+	var args: Array<mt.Expression> = expr.args;
 	return { type: 'CallExpression',
 		 // TODO: computed member expr for non-identifier verbs
 		 callee: dot(toESTree(expr.target), expr.verb),
@@ -97,14 +66,14 @@ export function toESTree(expr: Expression): ESExpr {
     }
 }
 
-function convertObject(doc: ?string, name, as, impl, script: Script): ESExpr {
+function convertObject(doc: ?string, name, as, impl, script: mt.Script): es.Expression {
     limitation('null doc', doc === null);
     limitation('null as', as === null);
     limitation('0 impls', impl.length === 0);
     limitation('null extends', script.ext === null);
     limitation('0 matchers', script.matchers.length === 0);
 
-    function convertMethod(m: Method): Property {
+    function convertMethod(m: mt.Method): es.Property {
 	limitation('null doc', m.doc === null);
 	limitation('null guard', m.guard === null);
 	return { "type": "Property",
@@ -120,8 +89,8 @@ function convertObject(doc: ?string, name, as, impl, script: Script): ESExpr {
              "properties": script.methods.map(convertMethod) };
 }
 
-function lambda(params: Array<Pattern>, body: Expression): ESExpr {
-    function convertPattern(p: Pattern): ESPattern {
+function lambda(params: Array<mt.Pattern>, body: mt.Expression): es.Expression {
+    function convertPattern(p: mt.Pattern): es.Pattern {
 	if (p.type === 'final') {
 	    return { type: 'Identifier', name: p.name };
 	} else {
