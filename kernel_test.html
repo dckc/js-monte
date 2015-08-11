@@ -37,7 +37,7 @@ var actual_lit = fmt.then(function(k) {
 });
 
 printResolved(actual_lit);
-// => [{is: "int", val: 42}]
+// => [{form: "int", val: 42}]
 </pre>
 
 <h2>Hello World Program</h2>
@@ -53,18 +53,18 @@ printResolved(actual_tracex);
 /* =>
 [
   {
-    is: "seq",
+    form: "seq",
     items: [
       {
-        expr: {is: "int", val: 42},
+        expr: {form: "int", val: 42},
+        form: "def",
         guard: null,
-        is: "def",
-        pat: {guard: null, name: "x", pt: "final"}
+        pat: {guard: null, name: "x", type: "final"}
       },
       {
-        args: [{is: "noun", name: "x"}],
-        is: "call",
-        target: {is: "noun", name: "traceln"},
+        args: [{form: "noun", name: "x"}],
+        form: "call",
+        target: {form: "noun", name: "traceln"},
         verb: "run"
       }
     ]
@@ -90,56 +90,59 @@ printResolved(actual);
 /* =>
 [
   {
-    expr: {is: "noun", name: "bzzt"},
+    expr: {form: "noun", name: "bzzt"},
+    form: "def",
     guard: null,
-    is: "def",
     pat: {
       items: [
-        {guard: null, name: "x", pt: "final"},
-        {guard: null, name: "y", pt: "var"},
+        {guard: null, name: "x", type: "final"},
+        {guard: null, name: "y", type: "var"},
         {
           inner: {
             items: [
-              {guard: null, name: "choc", pt: "final"},
+              {guard: null, name: "choc", type: "final"},
               {
                 inner: {
-                  items: [{guard: null, name: "van", pt: "final"}, {guard: {is: "noun", name: "_mapEmpty"}, pt: "ignore"}],
-                  pt: "list",
-                  tail: null
+                  items: [
+                    {guard: null, name: "van", type: "final"},
+                    {guard: {form: "noun", name: "_mapEmpty"}, type: "ignore"}
+                  ],
+                  tail: null,
+                  type: "list"
                 },
-                pt: "via",
+                type: "via",
                 view: {
-                  args: [{is: "str", val: "van"}],
-                  is: "call",
-                  target: {is: "noun", name: "_mapExtract"},
+                  args: [{form: "str", val: "van"}],
+                  form: "call",
+                  target: {form: "noun", name: "_mapExtract"},
                   verb: "run"
                 }
               }
             ],
-            pt: "list",
-            tail: null
+            tail: null,
+            type: "list"
           },
-          pt: "via",
+          type: "via",
           view: {
-            args: [{is: "str", val: "choc"}],
-            is: "call",
-            target: {is: "noun", name: "_mapExtract"},
+            args: [{form: "str", val: "choc"}],
+            form: "call",
+            target: {form: "noun", name: "_mapExtract"},
             verb: "run"
           }
         },
         {
-          inner: {guard: null, name: "z", pt: "final"},
-          pt: "via",
+          inner: {guard: null, name: "z", type: "final"},
+          type: "via",
           view: {
-            args: [{is: "noun", name: "z_Resolver"}, {is: "noun", name: "null"}],
-            is: "call",
-            target: {is: "noun", name: "_bind"},
+            args: [{form: "noun", name: "z_Resolver"}, {form: "noun", name: "null"}],
+            form: "call",
+            target: {form: "noun", name: "_bind"},
             verb: "run"
           }
         }
       ],
-      pt: "list",
-      tail: null
+      tail: null,
+      type: "list"
     }
   }
 ]
@@ -176,7 +179,7 @@ function gen(treeP) {
 
 printResolved(gen(ast2estree(actual_lit)));
 /* =>
-{is: "int", val: 42}
+{form: "int", val: 42}
 __monte_runtime.wrapInt(42)
 */
 </pre>
@@ -186,18 +189,18 @@ printResolved(gen(ast2estree(actual_tracex)));
 
 /* =>
 {
-  is: "seq",
+  form: "seq",
   items: [
     {
-      expr: {is: "int", val: 42},
+      expr: {form: "int", val: 42},
+      form: "def",
       guard: null,
-      is: "def",
-      pat: {guard: null, name: "x", pt: "final"}
+      pat: {guard: null, name: "x", type: "final"}
     },
     {
-      args: [{is: "noun", name: "x"}],
-      is: "call",
-      target: {is: "noun", name: "traceln"},
+      args: [{form: "noun", name: "x"}],
+      form: "call",
+      target: {form: "noun", name: "traceln"},
       verb: "run"
     }
   ]
