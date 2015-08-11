@@ -88,10 +88,10 @@ export function toESTree(expr: Expression): ESExpr {
 	return convertObject(expr.doc, expr.name,
 			     expr.as, expr.impl, expr.script);
     } else if (expr.is === 'escape') {
-	limitation('escape: null catchPattern', expr.catchPattern === null);
-	limitation('escape: noun pattern', expr.pattern.pt === 'final');
+	limitation('escape: no escape exception', expr.exc === null);
+	limitation('escape: final ejector', expr.ejector.pt === 'final');
 	// TODO: real escape support
-	return toESTree(expr.body);
+	return toESTree(expr.escBody);
     } else {
 	throw new Error('not implemented: ' + expr.is);
     }

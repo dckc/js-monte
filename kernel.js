@@ -14,13 +14,13 @@ export type Expression =
     { is: "seq", items: Array<Expression> } |
     { is: "call", target: Expression, verb: string, args: Array<Expression> } |
     { is: "def", pat: Pattern, guard: ?Expression, expr: Expression } |
-    { is: "escape", pattern: Pattern, body: Expression,
-      catchPattern: ?Pattern, catchBody: Expression } |
+    { is: "escape", ejector: Pattern, escBody: Expression,
+      exc: ?Pattern, handler: Expression } |
     { is: "object", doc: ?string, name: ?string,
       as: ?Expression, impl: Array<Expression>, script: Script } |
     { is: "assign", target: string, rvalue: Expression } |
-    { is: "finally", body: Expression, finalBody: Expression } |
-    { is: "try", body: Expression,
+    { is: "finally", finalBody: Expression, finish: Expression } |
+    { is: "try", tryBody: Expression,
       exc: Pattern, handler: Expression } |
     { is: "hide", inner: Expression } |
     { is: "if", test: Expression, then: Expression, otherwise: Expression } |
