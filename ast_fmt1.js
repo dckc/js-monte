@@ -167,8 +167,8 @@ function loadObject(s): Expression {
 
     var doc = trace('object doc', loadOpt(s, loadString));
     var namePat = loadPattern(s);
-    var name = (namePat.pt === 'final' ? namePat.name :
-		namePat.pt === 'ignore' ? null :
+    var name = (namePat.type === 'final' ? namePat.name :
+		namePat.type === 'ignore' ? null :
 		badFormat({expected: "final or ignore pattern",
 			   actual: namePat}));
     var auditors = loadTuple(s, loadExpr);
@@ -226,15 +226,15 @@ function loadPattern(stream, peek: ?number): Pattern {
     var kind = trace('loadPattern kind: ' + tagName[peek], peek) - bias;
 
     var kinds: Array<((s: any) => Pattern)> = [
-	(s) => fix({pt: 'final', name: loadNounName(s),
+	(s) => fix({type: 'final', name: loadNounName(s),
 		    guard: loadOpt(s, loadExpr)}),
-	(s) => fix({pt: 'ignore', guard: loadOpt(s, loadExpr)}),
-	(s) => fix({pt: 'var', name: loadNounName(s),
+	(s) => fix({type: 'ignore', guard: loadOpt(s, loadExpr)}),
+	(s) => fix({type: 'var', name: loadNounName(s),
 		    guard: loadOpt(s, loadExpr)}),
-	(s) => fix({pt: 'list', items: loadTuple(s, loadPattern),
+	(s) => fix({type: 'list', items: loadTuple(s, loadPattern),
 		    tail: loadOpt(s, loadPattern)}),
-	(s) => fix({pt: "via", view: loadExpr(s), inner: loadPattern(s) }),
-	(s) => fix({pt: "binding", noun: loadNounName(s) })
+	(s) => fix({type: "via", view: loadExpr(s), inner: loadPattern(s) }),
+	(s) => fix({type: "binding", noun: loadNounName(s) })
     ];
 
     var loadKind = kinds[kind];

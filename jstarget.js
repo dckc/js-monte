@@ -69,7 +69,7 @@ export function toESTree(expr: Expression): ESExpr {
 	return {type: 'Identifier', name: expr.name};
     } else if (expr.form === 'def') {
 	var pat = expr.pat;
-	if (pat.pt === 'final') {
+	if (pat.type === 'final') {
 	    // TODO: pattern guard
 	    // TODO: slot guard
 	    return {type: 'AssignmentExpression',
@@ -77,7 +77,7 @@ export function toESTree(expr: Expression): ESExpr {
 		    left: { type: 'Identifier', name: pat.name },
 		    right: toESTree(expr.expr) };
 	}
-	throw new Error('pattern not impl: ' + pat.pt);
+	throw new Error('pattern not impl: ' + pat.type);
     } else if (expr.form === 'call') {
 	var args: Array<Expression> = expr.args;
 	return { type: 'CallExpression',
@@ -89,7 +89,7 @@ export function toESTree(expr: Expression): ESExpr {
 			     expr.as, expr.impl, expr.script);
     } else if (expr.form === 'escape') {
 	limitation('escape: no escape exception', expr.exc === null);
-	limitation('escape: final ejector', expr.ejector.pt === 'final');
+	limitation('escape: final ejector', expr.ejector.type === 'final');
 	// TODO: real escape support
 	return toESTree(expr.escBody);
     } else {
@@ -122,10 +122,10 @@ function convertObject(doc: ?string, name, as, impl, script: Script): ESExpr {
 
 function lambda(params: Array<Pattern>, body: Expression): ESExpr {
     function convertPattern(p: Pattern): ESPattern {
-	if (p.pt === 'final') {
+	if (p.type === 'final') {
 	    return { type: 'Identifier', name: p.name };
 	} else {
-	    limitation('final patterns only', p.pt === 'final')
+	    limitation('final patterns only', p.type === 'final')
 	    throw ""
 	}
     }

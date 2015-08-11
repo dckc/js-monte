@@ -39,12 +39,12 @@ export type Method = { doc: ?string,
 export type Matcher = { pattern: Pattern, body: Expression };
 
 export type Pattern =
-    { pt: "final", name: string, guard: ?Expression } |
-    { pt: "ignore", guard: ?Expression } |
-    { pt: "var", name: string, guard: ?Expression } |
-    { pt: "list", items: Array<Pattern>, tail: ?Pattern } |
-    { pt: "via", view: Expression, inner: Pattern } |
-    { pt: "binding", noun: string }
+    { type: "final", name: string, guard: ?Expression } |
+    { type: "ignore", guard: ?Expression } |
+    { type: "var", name: string, guard: ?Expression } |
+    { type: "list", items: Array<Pattern>, tail: ?Pattern } |
+    { type: "via", view: Expression, inner: Pattern } |
+    { type: "binding", noun: string }
 ;
 
 function fix<T>(x: T): T {
