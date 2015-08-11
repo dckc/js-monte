@@ -24,6 +24,49 @@ print(1 + 1);
 // => 2
 </pre>
 
+<div><h2>Traits</h2>
+<p><em>exploring traits api...</em></p>
+
+<pre class="test">
+var traitsP = System.import('traits');
+var xP = traitsP.then(function(traits) {
+
+var Trait = traits.Trait;
+
+var TEquality = Trait({
+   equals: Trait.required,
+  differs: function(x) { return !this.equals(x); }
+});
+
+var TMagnitude = Trait.compose(TEquality, Trait({
+  smaller: Trait.required,
+  greater: function(x) { return !this.smaller(x) && this.differs(x) },
+  between: function(min, max) {
+    return min.smaller(this) && this.smaller(max);
+  }
+}));
+
+function TLength(l) {
+  return Trait.create(Object.prototype,
+    Trait.compose(
+    TEquality,
+    TMagnitude,
+    Trait({
+      magnitude: l,
+      equals: function(y) { return l == y.magnitude },
+      smaller: function(y) { return l < y.magnitude }
+    })
+  ));
+}
+
+return TLength(10).smaller(TLength(20));
+});
+
+printResolved(xP);
+// => true
+
+</div>
+
 <h2>Simple Literal Expression</h2>
 
 <p>Bytes are represented with a bias of 32 (presumably so that they're

@@ -2,7 +2,8 @@
   "jspm": {
     "directories": {},
     "dependencies": {
-      "escodegen": "npm:escodegen@^1.6.1"
+      "escodegen": "npm:escodegen@^1.6.1",
+      "traits": "npm:traits@^0.4.0"
     },
     "devDependencies": {
       "babel": "npm:babel-core@^5.1.13",
