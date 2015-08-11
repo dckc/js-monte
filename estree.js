@@ -42,3 +42,7 @@ export type Statement =
 export type Pattern =
     { type: "Identifier", name: string };
 
+export function es6_dummy() {
+    // without this, all the type decls get translated away,
+    // and I guess the module doesn't get translated?
+}
