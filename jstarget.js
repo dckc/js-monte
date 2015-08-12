@@ -9,12 +9,6 @@ export function toESTree(expr: mt.Expression): es.Expression {
     trace('toESTree', expr);
     trace('toESTree', expr.form);
 
-    function dot(obj: es.Expression, propName: string): es.Expression {
-	return {type: 'MemberExpression',
-		object: obj,
-		property: {type: 'Identifier', name: propName}};
-    }
-
     var rt = {type: 'Identifier', name: '__monte_runtime'};
 
     function lit(val: bool | number | string, wrapper: string): es.Expression {
@@ -66,6 +60,13 @@ export function toESTree(expr: mt.Expression): es.Expression {
     }
 }
 
+
+function dot(obj: es.Expression, propName: string): es.Expression {
+    return {type: 'MemberExpression',
+	    object: obj,
+	    property: {type: 'Identifier', name: propName}};
+}
+
 function convertObject(doc: ?string, name, as, impl, script: mt.Script): es.Expression {
     limitation('null doc', doc === null);
     limitation('null as', as === null);
@@ -85,8 +86,33 @@ function convertObject(doc: ?string, name, as, impl, script: mt.Script): es.Expr
                  "value": lambda(m.params, m.body) };
     }
 
-    return { "type": "ObjectExpression",
-             "properties": script.methods.map(convertMethod) };
+    // TODO: ensure Trait is hygenic; i.e. never used in monte.
+    var TraitModule = { "type": "Identifier", "name": "Trait" };
+    var ObjectAPI = { "type": "Identifier", "name": "Object" };
+
+    var init = {
+        "type": "CallExpression",
+        "callee": dot(TraitModule, "create"),
+        "arguments": [
+            dot(ObjectAPI, "prototype"),
+	    { type: "ObjectExpression",
+	      properties: script.methods.map(convertMethod)}
+	]
+    };
+
+    // TODO: push var statements out somehow.
+    return {
+	type: "VariableDeclaration",
+	declarations: [
+	    {
+		type: "VariableDeclarator",
+		id: { type: "Identifier", name: name },
+		init: init
+	    }
+	],
+	kind: "var"
+    };
+
 }
 
 function lambda(params: Array<mt.Pattern>, body: mt.Expression): es.Expression {
