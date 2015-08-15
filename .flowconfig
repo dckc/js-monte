@@ -1,2 +1,6 @@
 [libs]
 interfaces/
+
+[ignore]
+node_modules/.*
+jspm_packages/.*
