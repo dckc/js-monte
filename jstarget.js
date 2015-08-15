@@ -44,12 +44,12 @@ export function toESTree(expr: mt.Expression): es.Expression {
     case 'call':
 	var args: Array<mt.Expression> = expr.args;
 	kludge('TODO: computed member expr for non-identifier verbs',
-	       false, expr.verb);
+	       /[a-zA-Z]+/.test(expr.verb), expr.verb);
 	return { type: 'CallExpression',
 		 callee: dot(toESTree(expr.target), expr.verb),
 		 arguments: args.map(toESTree) };
     case 'hide':
-	return iife(toESTree(expr.inner), []);
+	return iife(expr.inner, []);
     case 'if':
 	return { type: "ConditionalExpression",
 		 test: toESTree(expr.test),
@@ -58,37 +58,50 @@ export function toESTree(expr: mt.Expression): es.Expression {
     }
 
     if (expr.form === 'def') {
-	var pat = expr.pat;
-	switch (pat.type) {
-	case 'var':
-	    kludge('slot guard', false, pat);
-	case 'final':
-	    return {type: 'AssignmentExpression',
-		    operator: '=',
-		    left: { type: 'Identifier', name: pat.name },
-		    right: withGuard(toESTree(expr.expr), pat.guard) };
-	default:
-	    limitation('def pattern type:', false, pat);
-	}
-	throw new Error('pattern not impl: ' + pat.type);
+	var lhs: ((_: mt.Pattern) => [string, ?mt.Expression]) = (pat) => {
+	    switch (pat.type) {
+	    case 'var':
+		kludge('slot (guard)', false, pat);
+	    case 'final':
+		return [pat.name, pat.guard];
+	    case 'ignore':
+		return [kludge('def ignore', false, '_'), pat.guard];
+	    case 'list':
+		kludge('skipping list', false, pat);
+		return ["_list", null];
+	    case 'via':
+		kludge('skipping view', false, pat.view);
+		return lhs(pat.inner);
+	    default:
+		throw limitation('def pattern type:', false, pat);
+	    }
+	};
+	var [target, guard] = lhs(expr.pat);
+	return {type: 'AssignmentExpression',
+		operator: '=',
+		left: { type: 'Identifier', name: target },
+		right: withGuard(toESTree(expr.expr), guard) };
     } else if (expr.form === 'object') {
 	return convertObject(expr.doc, expr.name,
 			     expr.as, expr.impl, expr.script);
     } else if (expr.form === 'escape') {
-	limitation('escape: no escape exception', expr.exc === null);
+	kludge('escape exception', expr.exc === null, expr.exc);
 	limitation('escape: final ejector', expr.ejector.type === 'final');
 	// TODO: real escape support
 	return toESTree(expr.escBody);
+    } else if (expr.form === 'finally') {
+	kludge('finally handler', expr.finish.form === 'null', expr.finish);
+	return toESTree(expr.finalBody);
     } else {
 	throw new Error('not implemented: ' + expr.form);
     }
 }
 
 
-function iife(body: es.Expression, params) {
+function iife(body: mt.Expression, params: Array<mt.Expression>) {
     return { type: 'CallExpression',
 	     callee: lambda([], body),
-	     arguments: params }
+	     arguments: params.map(toESTree) }
 }
 
 function dot(obj: es.Expression, propName: string): es.Expression {
@@ -98,7 +111,7 @@ function dot(obj: es.Expression, propName: string): es.Expression {
 }
 
 function convertObject(doc: ?string, name, as, impl, script: mt.Script): es.Expression {
-    limitation('null doc', doc === null);
+    kludge('null doc', doc === null, doc);
     limitation('null as', as === null);
     limitation('0 impls', impl.length === 0);
     limitation('null extends', script.ext === null);
@@ -112,8 +125,7 @@ function convertObject(doc: ?string, name, as, impl, script: mt.Script): es.Expr
                      "name": m.verb
 		 },
 		 "computed": false,
-		 "value": withGuard(
-		     lambda(m.params, m.body), m.guard) };
+		 "value": lambda(m.params, m.body, m.guard) };
     }
 
     // TODO: ensure Trait is hygenic; i.e. never used in monte.
@@ -145,7 +157,9 @@ function convertObject(doc: ?string, name, as, impl, script: mt.Script): es.Expr
 
 }
 
-function lambda(params: Array<mt.Pattern>, body: mt.Expression): es.Expression {
+function lambda(params: Array<mt.Pattern>,
+		body: mt.Expression,
+		guard: ?mt.Expression): es.Expression {
     function convertPattern(p: mt.Pattern): es.Pattern {
 	switch (p.type) {
 	case 'final':
@@ -178,7 +192,7 @@ function lambda(params: Array<mt.Pattern>, body: mt.Expression): es.Expression {
             "body": [
                 {
                     "type": "ReturnStatement",
-                    "argument": toESTree(body)
+                    "argument": withGuard(toESTree(body), guard)
                 }
             ]
         },
@@ -212,7 +226,7 @@ function kludge<T>(label: string, ok, specimen: T): T {
 }
 
 function trace<T>(label, x: T): T {
-    var tracing = true;
+    var tracing = false;
 
     if (tracing) {
 	console.log(label, x);
