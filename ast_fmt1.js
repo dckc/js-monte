@@ -7,6 +7,8 @@ export function load(data: string): Array<Expression> {
     var stream = makeStream(data);
     var exprs = [], expr;
 
+    trace('load...', data.length, "RESET");
+
     while (!stream.done()) {
 	expr = loadExpr(stream);
 	exprs.push(expr);
@@ -79,7 +81,10 @@ function loadExpr(stream, peek: ?number): Expression {
     if (!peek) {
 	peek = getTag(stream);
     }
-    var kind = trace('loadExpr kind: ' + tagName[peek], peek);
+    var kind = trace('loadExpr kind: ' + tagName[peek], peek,
+		     tagName[peek]);
+
+    var reject = () => badFormat({ actual: tagName[kind]});
 
     var kinds : Array<((s: any) => Expression)>= [
 	(s) => nullExpr(),
@@ -112,10 +117,10 @@ function loadExpr(stream, peek: ?number): Expression {
 		    exc: loadOpt(s, loadPattern),
 		    handler: loadExpr(s)}),
 	(s) => loadObject(s),
-	(s) => badFormat({ actual: tagName[kind]}), // 18: 'Script',
-	(s) => badFormat({ actual: tagName[kind]}), // 19: 'Method',
+	(s) => reject(), // 18: 'Script',
+	(s) => reject(), // 19: 'Method',
 
-	(s) => badFormat({ actual: tagName[kind]}), // 20: 'Matcher',
+	(s) => reject(), // 20: 'Matcher',
 	(s) => fix({ form: "assign",
 		     target: loadNounName(s),
 		     rvalue: loadExpr(s) }),
@@ -128,7 +133,15 @@ function loadExpr(stream, peek: ?number): Expression {
 
 	(s) => fix({ form: "if", test: loadExpr(s), then: loadExpr(s),
 		     otherwise: loadExpr(s) }),
-	(s) => loadMeta(s)
+	(s) => loadMeta(s),
+	(s) => reject(), // pattern tags
+	(s) => reject(),
+	(s) => reject(),
+	(s) => reject(),
+	(s) => reject(),
+	(s) => reject(),
+	// TODO: ensure string is length 1
+	(s) => fix({ form: 'char', val: loadStrVal(s)})
     ];
 
     var loadKind = kinds[kind];
@@ -137,7 +150,7 @@ function loadExpr(stream, peek: ?number): Expression {
 			 actual: [kind, tagName[kind]]});
     }
 
-    return trace("loadExpr", loadKind(stream));
+    return trace("loadExpr", loadKind(stream), '');
 }
 
 
@@ -165,7 +178,7 @@ function loadObject(s): Expression {
 		 body: loadExpr(s) };
     }
 
-    var doc = trace('object doc', loadOpt(s, loadString));
+    var doc = loadOpt(s, loadString);
     var namePat = loadPattern(s);
     var name = (namePat.type === 'final' ? namePat.name :
 		namePat.type === 'ignore' ? null :
@@ -268,7 +281,7 @@ function loadString(s): string {
     // ack: http://ecmanaut.blogspot.com/2006/07/encoding-decoding-utf8-in-javascript.html
     var decode_utf8 = (txt) => decodeURIComponent(escape(txt));
 
-    return decode_utf8(size > 0 ? s.slice(size) : "");
+    return size > 0 ? decode_utf8(s.slice(size)) : "";
 };
 
 
@@ -279,7 +292,9 @@ function zzd(bi) {
 }
 
 
-function makeStream(items: string) {
+type ByteString = string;
+
+function makeStream(items: ByteString) {
     var underrun = Error("Buffer underrun while streaming");
     var counter = 0;
     var size = items.length;
@@ -334,11 +349,23 @@ function makeStream(items: string) {
     });
 }
 
-function trace<T>(label, x: T): T {
-    var tracing = false;
+
+var context = [];
+
+function trace<T>(label, x: T, ctx?: ?string): T {
+    var tracing = true;
 
     if (tracing) {
-	console.log(label, x);
+	console.log(context.join('/') + ': ' + label, x);
     }
+
+    if (ctx === "RESET") {
+        context = [];
+    } else if (ctx == '') {
+	context.pop();
+    } else if (ctx) {
+	context.push(ctx);
+    }
+
     return x;
 }

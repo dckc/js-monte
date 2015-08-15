@@ -9,7 +9,7 @@
 <body>
   <h1>Monte / JavaScript</h1>
 
-  <textarea id='AST' rows='20' cols='50'></textarea>
+  <input id='AST' type='file'/ >
   <br />
   <button id='go'>Deserialize</button>
 
@@ -39,27 +39,49 @@
   System.import('jstarget').then(function(jstarget) {
   System.import('escodegen').then(function(escodegen) {
     function gebi(i) { return document.getElementById(i); };
-    function go() {
-       var ast, estree;
 
-       gebi('output').textContent = "";
-       gebi('error').textContent = "";
-       gebi('estree').textContent = "";
-       gebi('jsout').textContent = "";
+    var data;
 
-       try {
-         ast = fmt.load(gebi('AST').value)[0];
-         gebi('output').textContent = JSON.stringify(ast, '    ');
-         estree = jstarget.toESTree(ast);
-         gebi('estree').textContent = JSON.stringify(estree);
-         gebi('jsout').textContent = escodegen.generate(estree);
-       } catch(e) {
-         console.log(e);
-         gebi('error').textContent = e.message;
-  
-       }
+    var fr = new FileReader();
+
+    function handleFiles(e) {
+      var files = e.target.files;
+      console.log('files:', files.length);
+
+      // Closure to capture the file information.
+      fr.onload = (function(f) {
+        return function(e) {
+          data = e.target.result;
+          console.log('loaded data:', data.length, f.name);
+        };
+      }(files[0]));
+
+      fr.readAsBinaryString(files[0]);
     }
 
+    function go(e) {
+      var ast, estree;
+      console.log('go...');
+
+      gebi('output').textContent = "";
+      gebi('error').textContent = "";
+      gebi('estree').textContent = "";
+      gebi('jsout').textContent = "";
+
+      try {
+        ast = fmt.load(data)[0];
+        gebi('output').textContent = JSON.stringify(ast, '    ');
+        estree = jstarget.toESTree(ast);
+        gebi('estree').textContent = JSON.stringify(estree);
+        gebi('jsout').textContent = escodegen.generate(estree);
+      } catch(e) {
+        console.log(e);
+        gebi('error').textContent = JSON.stringify(e);
+      }
+      e.preventDefault();
+    }
+
+    gebi('AST').addEventListener('change', handleFiles);
     gebi('go').addEventListener('click', go);
   })})});
 
