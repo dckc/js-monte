@@ -353,7 +353,7 @@ function makeStream(items: ByteString) {
 var context = [];
 
 function trace<T>(label, x: T, ctx?: ?string): T {
-    var tracing = true;
+    var tracing = false;
 
     if (tracing) {
 	console.log(context.join('/') + ': ' + label, x);
