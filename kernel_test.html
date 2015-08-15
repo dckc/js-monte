@@ -83,6 +83,18 @@ printResolved(actual_lit);
 // => [{form: "int", val: 42}]
 </pre>
 
+<pre class="test">
+var fmt = System.import('ast_fmt1');
+var lit2 = fmt.then(function(k) {
+  return k.load("*&\x04\xb6!");
+});
+
+printResolved(lit2);
+// => [{form: "int", val: 9650}]
+</pre>
+
+
+
 <h2>Hello World Program</h2>
 
 <p>Let's try <code>{def x := 42; traceln(x)}</code></p>
