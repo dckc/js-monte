@@ -23,10 +23,21 @@ export type Expression =
       operator: string, /* TODO: AssignmentOperator */
       left: /* TODO: Pattern | */ Expression,
       right: Expression } |
+    { type: "ConditionalExpression",
+      test: Expression,
+      alternate: Expression,
+      consequent: Expression } |
     { type: 'CallExpression',
       callee: Expression, arguments: Array<Expression> } |
-    { type: 'MemberExpression', object: Expression, property: Expression };
+    { type: "AssignmentExpression",
+      operator: AssignmentOperator,
+      left: Pattern | Expression,
+      right: Expression } |
+    { type: 'MemberExpression', object: Expression, property: Expression }
     // TODO: more...
+;
+
+type AssignmentOperator = string; //@@??
 
 export type Property = {
     "type": "Property",
